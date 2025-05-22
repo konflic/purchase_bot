@@ -1,1 +1,1 @@
-TOKEN = open("TOKEN").read()
+TOKEN = open("TOKEN").read().strip()
