@@ -196,7 +196,7 @@ async def lists_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         prefix = "➡️ " if name == current_list_name else "   "
         message_parts.append(f"{prefix}{i}. {name}")
     if not current_list_name and len(all_lists) > 0:
-        message_parts.append("\nNo list selected. Use /selectlist.")
+        message_parts.append("\nSelect list to edit with /selectlist.")
     elif current_list_name and current_list_name not in all_lists:
         message_parts.append(
             f"\nWarn: Selected list '{current_list_name}' missing. /selectlist another."
@@ -243,7 +243,8 @@ async def selectlist_receive_choice(
             selected_name = choice
     if selected_name:
         context.user_data[CURRENT_LIST_KEY] = selected_name
-        await update.message.reply_text(f"Selected list: '{selected_name}'.")
+        await update.message.reply_text(f"Selected list: '{selected_name}'")
+        await list_items_command(update, context)
     else:
         await update.message.reply_text(
             f"List '{choice}' not found. Try /selectlist again or /lists."
@@ -370,6 +371,7 @@ async def add_item_receive_name(
         await update.message.reply_text(
             f"Added '{item_to_add}' to list '{current_list_name}'."
         )
+    await list_items_command(update, context)
     return ConversationHandler.END
 
 
@@ -388,10 +390,10 @@ async def list_items_command(
             f"List '{current_list_name}' is empty! Use /add."
         )
         return
-    message_text_parts = [f"<b>Items in '{current_list_name}':</b>"]
+    message_text_parts = [f"List '<b>{current_list_name}</b>':"]
     for i, item in enumerate(items, 1):
         message_text_parts.append(f"{i}. {item}")
-    await update.message.reply_html("\n".join(message_text_parts))
+    await update.message.reply_html("\n".join(message_text_parts) + "\n\n/add  /remove")
 
 
 async def remove_item_entry(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -438,9 +440,7 @@ async def remove_item_receive_choice(
             await update.message.reply_text(
                 f"Invalid item number (1-{len(current_items)}). Try /remove again."
             )
-            return (
-                ConversationHandler.END
-            )  # Keep in conversation for retry? For now, end.
+            return ConversationHandler.END
     else:
         item_to_remove_lower = item_to_remove_str.lower()
         found_idx = -1
@@ -457,8 +457,9 @@ async def remove_item_receive_choice(
         )
     else:
         await update.message.reply_text(
-            f"'{item_to_remove_str}' not found in '{current_list_name}'. Try /remove again."
+            f"'{item_to_remove_str}' not found in '{current_list_name}'. Try again."
         )
+    await list_items_command(update, context)
     return ConversationHandler.END
 
 
