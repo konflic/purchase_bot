@@ -1,0 +1,13 @@
+services:
+
+  bot:
+    restart: always
+    volumes:
+      - ./user_purchase_lists:/bot/user_purchase_lists
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+volumes:
+  tmp:
+    external: true
