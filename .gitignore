@@ -1,0 +1,4 @@
+venv/
+user_purchase_lists/
+TOKEN
+__pycache__/
