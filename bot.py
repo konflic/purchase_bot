@@ -39,7 +39,6 @@ class Commands:
     ADD_ITEM = "/add"
     SHOW_ITEMS = "/list"
     REMOVE_ITEM = "/remove"
-    DELETE_ALL_ITEMS = "/clear"
     HELP = "/help"
 
 
@@ -104,7 +103,7 @@ async def ensure_list_selected(
             "No purchase list is currently selected.\n"
             f"{Commands.CREATE_LIST} to make one\n"
             f"{Commands.SET_ACTIVE_LIST} to choose one.\n"
-            "/lists to see all your lists."
+            f"{Commands.SHOW_LISTS} to see all your lists."
         )
         return None
     if not get_user_list_path(user.id, current_list_name).exists():
@@ -144,21 +143,20 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         )
 
     help_text_lines = [
-        f"Hi {user.mention_html()}! I'm your multi-list Purchase Bot. 🛒",
+        f"Hi {user.mention_html()}! I'm your multi-list Bot.",
         "Send a command, and I'll ask for more info if needed.",
-        "Use the menu button (or type '/') to see available commands.",
+        "Use Menu button or /help to see available commands.",
         "",
         "<b>List Management:</b>",
         f"{Commands.CREATE_LIST} - Create a new list.",
-        "/lists - Show all your lists.",
+        f"{Commands.SHOW_LISTS} - Show all your lists.",
         f"{Commands.SET_ACTIVE_LIST} - Select a list to work with.",
-        "/deletelist - Delete a list.",
+        f"{Commands.DELETE_LIST} - Delete a list.",
         "",
         "<b>Item Management (for the selected list):</b>",
-        "/add - Add item to current list.",
-        "/list - Show items in current list.",
-        "/remove - Remove item from current list.",
-        "/clear - Clear all items from current list.",
+        f"{Commands.ADD_ITEM} - Add item to current list.",
+        f"{Commands.SHOW_ITEMS} - Show items in current list.",
+        f"{Commands.REMOVE_ITEM} - Remove item from current list.",
         "",
         f"{Commands.HELP} - Show this message again.",
     ]
@@ -222,7 +220,9 @@ async def lists_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         )
         if CURRENT_LIST_KEY in context.user_data:
             del context.user_data[CURRENT_LIST_KEY]
-    await update.message.reply_text("\n".join(message_parts) + f"\n\n{Commands.SET_ACTIVE_LIST}")
+    await update.message.reply_text(
+        "\n".join(message_parts) + f"\n\n{Commands.SET_ACTIVE_LIST}"
+    )
 
 
 async def selectlist_entry(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -268,7 +268,7 @@ async def selectlist_receive_choice(
         await list_items_command(update, context)
     else:
         await update.message.reply_text(
-            f"List '{choice}' not found. Try {Commands.SET_ACTIVE_LIST} again or /lists."
+            f"List '{choice}' not found. Try {Commands.SET_ACTIVE_LIST} again or {Commands.SHOW_LISTS}"
         )
     return ConversationHandler.END
 
@@ -312,7 +312,7 @@ async def deletelist_receive_choice(
             list_to_delete_name = choice
     if not list_to_delete_name:
         await update.message.reply_text(
-            f"List '{choice}' not found. Try /deletelist again."
+            f"List '{choice}' not found. Try {Commands.DELETE_LIST} again"
         )
         return ConversationHandler.END
 
@@ -336,7 +336,7 @@ async def deletelist_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
     list_to_delete_name = context.user_data.get(LIST_TO_DELETE_KEY)
     if not list_to_delete_name:
         await update.message.reply_text(
-            "Error: No list pending deletion. Start with /deletelist."
+            f"Error: No list pending deletion. Start with {Commands.DELETE_LIST}"
         )
         return ConversationHandler.END
     confirmation = update.message.text.strip().lower()
@@ -384,7 +384,9 @@ async def add_item_receive_name(
         return ConversationHandler.END
     current_list_name = context.user_data.get(CURRENT_LIST_KEY)
     if not current_list_name:
-        await update.message.reply_text(f"Error: No list selected. Use {Commands.SET_ACTIVE_LIST}")
+        await update.message.reply_text(
+            f"Error: No list selected. Use {Commands.SET_ACTIVE_LIST}"
+        )
         return ConversationHandler.END
 
     item_to_add: list = [
@@ -392,7 +394,9 @@ async def add_item_receive_name(
     ]
 
     if not item_to_add:
-        await update.message.reply_text("Cannot add empty item. Try /add again.")
+        await update.message.reply_text(
+            f"Cannot add empty item. Try {Commands.ADD_ITEM} again"
+        )
         return ConversationHandler.END
 
     current_items = read_list(user.id, current_list_name)
@@ -420,14 +424,15 @@ async def list_items_command(
     items = read_list(user.id, current_list_name)
     if not items:
         await update.message.reply_text(
-            f"List '{current_list_name}' is empty! Use /add."
+            f"List '{current_list_name}' is empty! Use {Commands.ADD_ITEM}"
         )
         return
     message_text_parts = [f"List '<b>{current_list_name}</b>':"]
     for i, item in enumerate(items, 1):
         message_text_parts.append(f"{i}. {item}")
     await update.message.reply_html(
-        "\n".join(message_text_parts) + f"\n\n/add  /remove  {Commands.HELP}"
+        "\n".join(message_text_parts)
+        + f"\n\n{Commands.ADD_ITEM}  {Commands.REMOVE_ITEM}  {Commands.HELP}"
     )
 
 
@@ -454,45 +459,59 @@ async def remove_item_receive_choice(
     user = update.effective_user
     if not user or not update.message or not update.message.text:
         return ConversationHandler.END
+    
     current_list_name = context.user_data.get(CURRENT_LIST_KEY)
+    
     if not current_list_name:
-        await update.message.reply_text(f"Error: No list selected. Use {Commands.SET_ACTIVE_LIST}")
+        await update.message.reply_text(
+            f"Error: No list selected. Use {Commands.SET_ACTIVE_LIST}"
+        )
         return ConversationHandler.END
-    item_to_remove_str = update.message.text.strip()
+
+    items_to_remove: list = [el for el in update.message.text.strip().split(" ") if el]
+
     current_items = read_list(user.id, current_list_name)
+
     if not current_items:
         await update.message.reply_text(f"List '{current_list_name}' is empty.")
         return ConversationHandler.END
-    removed_item_name = None
+    
+    removed_item_names = []
+
     new_items = list(current_items)
-    if item_to_remove_str.isdigit():
-        item_number = int(item_to_remove_str)
-        if 1 <= item_number <= len(new_items):
-            removed_item_name = new_items.pop(item_number - 1)
+
+    for item in items_to_remove:
+        if item.isdigit():
+            item_number = int(item)
+            if 1 <= item_number <= len(new_items):
+                removed_item_names.append(new_items.pop(item_number - 1))
+            else:
+                await update.message.reply_text(
+                    f"Invalid item number (1-{len(current_items)}). Try {Commands.REMOVE_ITEM} again."
+                )
+                return ConversationHandler.END
         else:
-            await update.message.reply_text(
-                f"Invalid item number (1-{len(current_items)}). Try /remove again."
-            )
-            return ConversationHandler.END
-    else:
-        item_to_remove_lower = item_to_remove_str.lower()
-        found_idx = -1
-        for i, item_in_list in enumerate(new_items):
-            if item_in_list.lower() == item_to_remove_lower:
-                found_idx = i
-                break
-        if found_idx != -1:
-            removed_item_name = new_items.pop(found_idx)
-    if removed_item_name:
+            item_to_remove_lower = item.lower()
+            found_idx = -1
+            for i, item_in_list in enumerate(new_items):
+                if item_in_list.lower() == item_to_remove_lower:
+                    found_idx = i
+                    break
+            if found_idx != -1:
+                removed_item_names.append(new_items.pop(found_idx))
+
+    if removed_item_names:
         write_list(user.id, current_list_name, new_items)
         await update.message.reply_text(
-            f"Removed '{removed_item_name}' from '{current_list_name}'."
+            f"Removed '{removed_item_names}' from '{current_list_name}'."
         )
     else:
         await update.message.reply_text(
-            f"'{item_to_remove_str}' not found in '{current_list_name}'. Try again."
+            f"'{items_to_remove}' not found in '{current_list_name}'. Try again."
         )
+
     await list_items_command(update, context)
+
     return ConversationHandler.END
 
 
@@ -534,7 +553,6 @@ async def post_init_tasks(application: Application) -> None:
         BotCommand("add", "Add an item to the current list"),
         BotCommand("list", "Show items in the current list"),
         BotCommand("remove", "Remove item from current list"),
-        BotCommand("clear", "Clear all items from current list"),
     ]
     await application.bot.set_my_commands(bot_commands)
     print("Bot commands have been set")
