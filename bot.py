@@ -536,7 +536,7 @@ async def clear_list_command(
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message:
         await update.message.reply_text(
-            f"Unknown command {update.message}. {Commands.HELP} to see the menu"
+            f"Unknown command {update.message.text}. {Commands.HELP} to see the menu"
         )
 
 
