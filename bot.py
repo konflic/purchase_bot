@@ -486,7 +486,7 @@ async def remove_item_receive_choice(
         if item.isdigit():
             item_number = int(item)
             if 1 <= item_number <= len(new_items):
-                removed_item_names.append(new_items.get[item_number - 1])
+                removed_item_names.append(new_items[item_number - 1])
                 new_items[item_number-1] = ""
             else:
                 await update.message.reply_text(
