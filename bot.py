@@ -20,6 +20,7 @@ except ImportError:
 USER_DATA_BASE_DIR = Path("user_purchase_lists")
 CURRENT_LIST_KEY = "current_list_name"
 LIST_TO_DELETE_KEY = "list_to_delete_temp_name"
+DEFAULT_TIMEOUT = 30
 
 (
     AWAITING_ITEM_FOR_ADD,
@@ -580,7 +581,7 @@ def main() -> None:
             ]
         },
         fallbacks=[cancel_handler],
-        conversation_timeout=300,
+        conversation_timeout=DEFAULT_TIMEOUT,
     )
     selectlist_conv = ConversationHandler(
         entry_points=[CommandHandler("selectlist", selectlist_entry)],
@@ -592,7 +593,7 @@ def main() -> None:
             ]
         },
         fallbacks=[cancel_handler],
-        conversation_timeout=300,
+        conversation_timeout=DEFAULT_TIMEOUT,
     )
     deletelist_conv = ConversationHandler(
         entry_points=[CommandHandler("deletelist", deletelist_entry)],
@@ -607,7 +608,7 @@ def main() -> None:
             ],
         },
         fallbacks=[cancel_handler],
-        conversation_timeout=300,
+        conversation_timeout=DEFAULT_TIMEOUT,
     )
     add_item_conv = ConversationHandler(
         entry_points=[CommandHandler("add", add_item_entry)],
@@ -617,7 +618,7 @@ def main() -> None:
             ]
         },
         fallbacks=[cancel_handler],
-        conversation_timeout=300,
+        conversation_timeout=DEFAULT_TIMEOUT,
     )
     remove_item_conv = ConversationHandler(
         entry_points=[CommandHandler("remove", remove_item_entry)],
@@ -629,14 +630,13 @@ def main() -> None:
             ]
         },
         fallbacks=[cancel_handler],
-        conversation_timeout=300,
+        conversation_timeout=DEFAULT_TIMEOUT,
     )
 
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("lists", lists_command))
     application.add_handler(CommandHandler("list", list_items_command))
-    application.add_handler(CommandHandler("clear", clear_list_command))
 
     application.add_handler(createlist_conv)
     application.add_handler(selectlist_conv)
