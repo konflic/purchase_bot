@@ -446,10 +446,12 @@ async def remove_item_entry(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     current_items = read_list(user.id, current_list_name)
     if not current_items:
         await update.message.reply_text(
-            f"List '{current_list_name}' is empty. Nothing to remove."
+            f"List '{current_list_name}' is empty. Nothing to remove"
         )
         return ConversationHandler.END
+    
     await update.message.reply_text(f"Item number to remove")
+
     return AWAITING_ITEM_FOR_REMOVE
 
 
@@ -484,24 +486,20 @@ async def remove_item_receive_choice(
         if item.isdigit():
             item_number = int(item)
             if 1 <= item_number <= len(new_items):
-                removed_item_names.append(new_items.pop(item_number - 1))
+                removed_item_names.append(new_items.get[item_number - 1])
+                new_items[item_number-1] = ""
             else:
                 await update.message.reply_text(
                     f"Invalid item number (1-{len(current_items)}). Try {Commands.REMOVE_ITEM} again."
                 )
                 return ConversationHandler.END
-        else:
-            item_to_remove_lower = item.lower()
-            found_idx = -1
-            for i, item_in_list in enumerate(new_items):
-                if item_in_list.lower() == item_to_remove_lower:
-                    found_idx = i
-                    break
-            if found_idx != -1:
-                removed_item_names.append(new_items.pop(found_idx))
+
+    new_items = [el for el in new_items if el]
 
     if removed_item_names:
+
         write_list(user.id, current_list_name, new_items)
+
         await update.message.reply_text(
             f"Removed '{removed_item_names}' from '{current_list_name}'."
         )
