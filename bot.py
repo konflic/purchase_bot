@@ -17,8 +17,6 @@ try:
 except ImportError:
     TELEGRAM_BOT_TOKEN = None
 
-assert TELEGRAM_BOT_TOKEN, "Токен не может быть пустым"
-
 USER_DATA_BASE_DIR = Path("user_purchase_lists")
 CURRENT_LIST_KEY = "current_list_name"
 LIST_TO_DELETE_KEY = "list_to_delete_temp_name"
@@ -156,9 +154,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         f"{Commands.DELETE_LIST} - Удалить список",
         "",
         "<b>Управление выбранным списком:</b>",
-        f"{Commands.ADD_ITEM} - Добавить элемент в список",
-        f"{Commands.SHOW_ITEMS} - Показать элементы списка",
-        f"{Commands.REMOVE_ITEM} - Удалить элемент из списка",
+        f"{Commands.ADD_ITEM} - Добавить элемент",
+        f"{Commands.SHOW_ITEMS} - Показать элементы",
+        f"{Commands.REMOVE_ITEM} - Удалить элемент",
         "",
         f"{Commands.HELP} - Вывести это сообщение",
     ]
@@ -512,7 +510,7 @@ async def remove_item_receive_choice(
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message:
         await update.message.reply_text(
-            f"Unknown command {update.message.text}. {Commands.HELP} to see the menu"
+            f"Нарушен контекст или неизвестная команда {update.message.text}\n{Commands.HELP} to see the menu"
         )
 
 
@@ -521,13 +519,13 @@ async def post_init_tasks(application: Application) -> None:
     bot_commands = [
         BotCommand("start", "Start the bot & see help"),
         BotCommand("help", "Show help message"),
-        BotCommand("createlist", "Create a new purchase list"),
-        BotCommand("lists", "Show all your purchase lists"),
-        BotCommand("selectlist", "Select an active purchase list"),
-        BotCommand("deletelist", "Delete a purchase list"),
-        BotCommand("add", "Add an item to the current list"),
-        BotCommand("list", "Show items in the current list"),
-        BotCommand("remove", "Remove item from current list"),
+        BotCommand("create_list", "Create a new purchase list"),
+        BotCommand("shod_lists", "Show all your purchase lists"),
+        BotCommand("select_list", "Select an active purchase list"),
+        BotCommand("delete_list", "Delete a purchase list"),
+        BotCommand("add_item", "Add an item to the current list"),
+        BotCommand("list_items", "Show items in the current list"),
+        BotCommand("remove_item", "Remove item from current list"),
     ]
     await application.bot.set_my_commands(bot_commands)
     print("Bot commands have been set")
@@ -535,7 +533,7 @@ async def post_init_tasks(application: Application) -> None:
 
 def main() -> None:
     if not TELEGRAM_BOT_TOKEN or TELEGRAM_BOT_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN":
-        print("ERROR: TELEGRAM_BOT_TOKEN not set.")
+        print("ERROR: TELEGRAM_BOT_TOKEN not set")
         return
 
     USER_DATA_BASE_DIR.mkdir(parents=True, exist_ok=True)
