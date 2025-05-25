@@ -41,6 +41,7 @@ class Commands:
     SHOW_ITEMS = "/list_items"
     REMOVE_ITEM = "/remove_item"
     HELP = "/help"
+    CANCEL = "/cancel"
 
 
 def sanitize_filename(name: str) -> str:
@@ -518,14 +519,14 @@ async def post_init_tasks(application: Application) -> None:
     """Tasks to run after the bot is initialized but before polling starts."""
     bot_commands = [
         BotCommand("start", "Start the bot & see help"),
-        BotCommand("help", "Show help message"),
-        BotCommand("create_list", "Create a new purchase list"),
-        BotCommand("shod_lists", "Show all your purchase lists"),
-        BotCommand("select_list", "Select an active purchase list"),
-        BotCommand("delete_list", "Delete a purchase list"),
-        BotCommand("add_item", "Add an item to the current list"),
-        BotCommand("list_items", "Show items in the current list"),
-        BotCommand("remove_item", "Remove item from current list"),
+        BotCommand(Commands.HELP, "Show help message"),
+        BotCommand(Commands.CREATE_LIST, "Create a new purchase list"),
+        BotCommand(Commands.SHOW_LISTS, "Show all your purchase lists"),
+        BotCommand(Commands.SET_ACTIVE_LIST, "Select an active purchase list"),
+        BotCommand(Commands.DELETE_LIST, "Delete a purchase list"),
+        BotCommand(Commands.ADD_ITEM, "Add an item to the current list"),
+        BotCommand(Commands.SHOW_ITEMS, "Show items in the current list"),
+        BotCommand(Commands.REMOVE_ITEM, "Remove item from current list"),
     ]
     await application.bot.set_my_commands(bot_commands)
     print("Bot commands have been set")
@@ -545,10 +546,10 @@ def main() -> None:
         .build()
     )
 
-    cancel_handler = CommandHandler("cancel", cancel_conversation)
+    cancel_handler = CommandHandler(Commands.CANCEL, cancel_conversation)
 
     createlist_conv = ConversationHandler(
-        entry_points=[CommandHandler("createlist", createlist_entry)],
+        entry_points=[CommandHandler(Commands.CREATE_LIST, createlist_entry)],
         states={
             AWAITING_LISTNAME_FOR_CREATE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, createlist_receive_name)
@@ -558,7 +559,7 @@ def main() -> None:
         conversation_timeout=DEFAULT_TIMEOUT,
     )
     selectlist_conv = ConversationHandler(
-        entry_points=[CommandHandler("selectlist", selectlist_entry)],
+        entry_points=[CommandHandler(Commands.SET_ACTIVE_LIST, selectlist_entry)],
         states={
             AWAITING_LISTNAME_FOR_SELECT: [
                 MessageHandler(
@@ -570,7 +571,7 @@ def main() -> None:
         conversation_timeout=DEFAULT_TIMEOUT,
     )
     deletelist_conv = ConversationHandler(
-        entry_points=[CommandHandler("deletelist", deletelist_entry)],
+        entry_points=[CommandHandler(Commands.DELETE_LIST, deletelist_entry)],
         states={
             AWAITING_LISTNAME_FOR_DELETE: [
                 MessageHandler(
@@ -585,7 +586,7 @@ def main() -> None:
         conversation_timeout=DEFAULT_TIMEOUT,
     )
     add_item_conv = ConversationHandler(
-        entry_points=[CommandHandler("add", add_item_entry)],
+        entry_points=[CommandHandler(Commands.ADD_ITEM, add_item_entry)],
         states={
             AWAITING_ITEM_FOR_ADD: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, add_item_receive_name)
@@ -595,7 +596,7 @@ def main() -> None:
         conversation_timeout=DEFAULT_TIMEOUT,
     )
     remove_item_conv = ConversationHandler(
-        entry_points=[CommandHandler("remove", remove_item_entry)],
+        entry_points=[CommandHandler(Commands.REMOVE_ITEM, remove_item_entry)],
         states={
             AWAITING_ITEM_FOR_REMOVE: [
                 MessageHandler(
@@ -608,9 +609,9 @@ def main() -> None:
     )
 
     application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(CommandHandler("lists", lists_command))
-    application.add_handler(CommandHandler("list", list_items_command))
+    application.add_handler(CommandHandler(Commands.HELP, help_command))
+    application.add_handler(CommandHandler(Commands.SHOW_LISTS, lists_command))
+    application.add_handler(CommandHandler(Commands.SHOW_ITEMS, list_items_command))
 
     application.add_handler(createlist_conv)
     application.add_handler(selectlist_conv)
