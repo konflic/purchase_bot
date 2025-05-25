@@ -15,7 +15,9 @@ from telegram.ext import (
 try:
     from config import TOKEN as TELEGRAM_BOT_TOKEN
 except ImportError:
-    TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
+    TELEGRAM_BOT_TOKEN = None
+
+assert TELEGRAM_BOT_TOKEN, "Токен не может быть пустым"
 
 USER_DATA_BASE_DIR = Path("user_purchase_lists")
 CURRENT_LIST_KEY = "current_list_name"
@@ -33,13 +35,13 @@ DEFAULT_TIMEOUT = 30
 
 
 class Commands:
-    CREATE_LIST = "/createlist"
-    SHOW_LISTS = "/lists"
-    SET_ACTIVE_LIST = "/selectlist"
-    DELETE_LIST = "/deletelist"
-    ADD_ITEM = "/add"
-    SHOW_ITEMS = "/list"
-    REMOVE_ITEM = "/remove"
+    CREATE_LIST = "/create_list"
+    SHOW_LISTS = "/show_lists"
+    SET_ACTIVE_LIST = "/select_list"
+    DELETE_LIST = "/delete_list"
+    ADD_ITEM = "/add_item"
+    SHOW_ITEMS = "/list_items"
+    REMOVE_ITEM = "/remove_item"
     HELP = "/help"
 
 
@@ -101,16 +103,16 @@ async def ensure_list_selected(
 
     if not current_list_name:
         await update.message.reply_text(
-            "No purchase list is currently selected.\n"
-            f"{Commands.CREATE_LIST} to make one\n"
-            f"{Commands.SET_ACTIVE_LIST} to choose one.\n"
-            f"{Commands.SHOW_LISTS} to see all your lists."
+            "Не выбран список!\n"
+            f"{Commands.CREATE_LIST} - Создать новый список\n"
+            f"{Commands.SET_ACTIVE_LIST} - Выбрать ранее созданный список\n"
+            f"{Commands.SHOW_LISTS} - Показать списки пользователя"
         )
         return None
     if not get_user_list_path(user.id, current_list_name).exists():
         await update.message.reply_text(
-            f"Selected list '{current_list_name}' no longer exists.\n"
-            f"Please {Commands.SET_ACTIVE_LIST} another or {Commands.CREATE_LIST} a new one."
+            f"Выбранный список '{current_list_name}' больше не существует.\n"
+            f"Выберите {Commands.SET_ACTIVE_LIST} другой список или {Commands.CREATE_LIST} создайте новый."
         )
         if CURRENT_LIST_KEY in context.user_data:
             del context.user_data[CURRENT_LIST_KEY]
@@ -121,7 +123,7 @@ async def ensure_list_selected(
 async def cancel_conversation(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> int:
-    await update.message.reply_text("Operation cancelled.")
+    await update.message.reply_text("Операция отменена")
     context.user_data.pop(LIST_TO_DELETE_KEY, None)
     # Potentially clear other conversation-specific keys if you add more
     return ConversationHandler.END
@@ -140,26 +142,25 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if len(all_lists) == 1 and not context.user_data.get(CURRENT_LIST_KEY):
         context.user_data[CURRENT_LIST_KEY] = all_lists[0]
         await update.message.reply_text(
-            f"Automatically selected your only list: '{all_lists[0]}'."
+            f"Автоматически выбрат единственный список: '{all_lists[0]}'."
         )
 
     help_text_lines = [
-        f"Hi {user.mention_html()}! I'm your multi-list Bot.",
-        "Send a command, and I'll ask for more info if needed.",
-        "Use Menu button or /help to see available commands.",
+        f"Привет, {user.mention_html()}! Я бот для управления списками.\n",
+        "Вот что я умею:",
         "",
-        "<b>List Management:</b>",
-        f"{Commands.CREATE_LIST} - Create a new list.",
-        f"{Commands.SHOW_LISTS} - Show all your lists.",
-        f"{Commands.SET_ACTIVE_LIST} - Select a list to work with.",
-        f"{Commands.DELETE_LIST} - Delete a list.",
+        "<b>Управление списками:</b>",
+        f"{Commands.CREATE_LIST} - Создать новый",
+        f"{Commands.SHOW_LISTS} - Показать списки",
+        f"{Commands.SET_ACTIVE_LIST} - Выбрать список",
+        f"{Commands.DELETE_LIST} - Удалить список",
         "",
-        "<b>Item Management (for the selected list):</b>",
-        f"{Commands.ADD_ITEM} - Add item to current list.",
-        f"{Commands.SHOW_ITEMS} - Show items in current list.",
-        f"{Commands.REMOVE_ITEM} - Remove item from current list.",
+        "<b>Управление выбранным списком:</b>",
+        f"{Commands.ADD_ITEM} - Добавить элемент в список",
+        f"{Commands.SHOW_ITEMS} - Показать элементы списка",
+        f"{Commands.REMOVE_ITEM} - Удалить элемент из списка",
         "",
-        f"{Commands.HELP} - Show this message again.",
+        f"{Commands.HELP} - Вывести это сообщение",
     ]
 
     await update.message.reply_html("\n".join(help_text_lines))
@@ -170,7 +171,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 async def createlist_entry(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.message.reply_text("What name would you like for the new list?")
+    await update.message.reply_text("Как назовём новый список?")
     return AWAITING_LISTNAME_FOR_CREATE
 
 
@@ -184,19 +185,18 @@ async def createlist_receive_name(
     new_list_name = sanitize_filename(new_list_name_raw)
     if not new_list_name:
         await update.message.reply_text(
-            f"Invalid list name. Try {Commands.CREATE_LIST} again."
+            f"Такое имя не подходит.\nПопробуй ещё разок {Commands.CREATE_LIST}"
         )
         return ConversationHandler.END
     if get_user_list_path(user.id, new_list_name).exists():
         await update.message.reply_text(
-            f"List '{new_list_name}' already exists. Try {Commands.SET_ACTIVE_LIST} {new_list_name} or {Commands.CREATE_LIST} with a new name."
+            f"Список '{new_list_name}' уже есть.\n"
+            f"Попробуй {Commands.SET_ACTIVE_LIST} или {Commands.CREATE_LIST} с другим названием"
         )
         return ConversationHandler.END
     write_list(user.id, new_list_name, [])
     context.user_data[CURRENT_LIST_KEY] = new_list_name
-    await update.message.reply_text(
-        f"Created and selected new list: '{new_list_name}'."
-    )
+    await update.message.reply_text(f"Ура! Создан и выбран список '{new_list_name}'")
     return ConversationHandler.END
 
 
@@ -206,14 +206,9 @@ async def lists_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
     all_lists = get_all_list_names(user.id)
     current_list_name = context.user_data.get(CURRENT_LIST_KEY)
-    if not all_lists:
-        await update.message.reply_text(
-            f"You have no lists. Use {Commands.CREATE_LIST}."
-        )
-        return
-    message_parts = ["Your Purchase Lists:"]
+    message_parts = ["Ваши списки:"]
     for i, name in enumerate(all_lists, 1):
-        prefix = "➡️ " if name == current_list_name else "   "
+        prefix = "🟢 " if name == current_list_name else "⚪ "
         message_parts.append(f"{prefix}{i}. {name}")
     if current_list_name and current_list_name not in all_lists:
         message_parts.append(
@@ -233,11 +228,11 @@ async def selectlist_entry(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     all_lists = get_all_list_names(user.id)
     if not all_lists:
         await update.message.reply_text(
-            f"No lists to select. Use {Commands.CREATE_LIST}"
+            f"Списков нет. Создать - {Commands.CREATE_LIST}"
         )
         return ConversationHandler.END
     await lists_command(update, context)
-    await update.message.reply_text("Enter name or number of list to select:")
+    await update.message.reply_text("Введи номер списка:")
     return AWAITING_LISTNAME_FOR_SELECT
 
 
@@ -265,11 +260,11 @@ async def selectlist_receive_choice(
             selected_name = choice
     if selected_name:
         context.user_data[CURRENT_LIST_KEY] = selected_name
-        await update.message.reply_text(f"Selected list: '{selected_name}'")
+        await update.message.reply_text(f"Выбран список '{selected_name}'")
         await list_items_command(update, context)
     else:
         await update.message.reply_text(
-            f"List '{choice}' not found. Try {Commands.SET_ACTIVE_LIST} again or {Commands.SHOW_LISTS}"
+            f"Список '{choice}' не найден.\nПопробуй {Commands.SET_ACTIVE_LIST} ещё раз с одним из доступных списков {Commands.SHOW_LISTS}"
         )
     return ConversationHandler.END
 
@@ -281,11 +276,11 @@ async def deletelist_entry(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     all_lists = get_all_list_names(user.id)
     if not all_lists:
         await update.message.reply_text(
-            f"No lists to delete. Use {Commands.CREATE_LIST}."
+            f"Нет доступных списков. Создать - {Commands.CREATE_LIST}."
         )
         return ConversationHandler.END
     await lists_command(update, context)
-    await update.message.reply_text("Enter name or number of list to delete:")
+    await update.message.reply_text("Введи номер списка для удаления:")
     return AWAITING_LISTNAME_FOR_DELETE
 
 
@@ -320,12 +315,12 @@ async def deletelist_receive_choice(
     context.user_data[LIST_TO_DELETE_KEY] = list_to_delete_name
 
     if list_to_delete_name == "default":
-        await update.message.reply_text("Default list cant be deleted")
+        await update.message.reply_text("Список default удалять нельзя")
         await lists_command(update, context)
         return ConversationHandler.END
 
     await update.message.reply_text(
-        f"⚠️ Delete list '{list_to_delete_name}'? Reply 'yes' to confirm."
+        f"⚠️ Удалить список '{list_to_delete_name}'?\nВведи 'да' для подтверждения."
     )
     return AWAITING_CONFIRM_DELETE
 
@@ -341,13 +336,13 @@ async def deletelist_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         return ConversationHandler.END
     confirmation = update.message.text.strip().lower()
-    if confirmation == "yes":
+    if confirmation == "да":
         list_path = get_user_list_path(user.id, list_to_delete_name)
         if list_path.exists():
             try:
                 os.remove(list_path)
                 await update.message.reply_text(
-                    f"List '{list_to_delete_name}' deleted."
+                    f"Список '{list_to_delete_name}' удалён"
                 )
                 if context.user_data.get(CURRENT_LIST_KEY) == list_to_delete_name:
                     if CURRENT_LIST_KEY in context.user_data:
@@ -358,10 +353,10 @@ async def deletelist_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 )
         else:
             await update.message.reply_text(
-                f"List '{list_to_delete_name}' not found (already deleted?)."
+                f"Список '{list_to_delete_name}' не найден."
             )
     else:
-        await update.message.reply_text("List deletion cancelled.")
+        await update.message.reply_text("Удаления списка отменено")
     context.user_data.pop(LIST_TO_DELETE_KEY, None)
     return ConversationHandler.END
 
@@ -373,7 +368,7 @@ async def add_item_entry(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     current_list_name = await ensure_list_selected(update, context)
     if not current_list_name:
         return ConversationHandler.END
-    await update.message.reply_text(f"Item to add to '{current_list_name}':")
+    await update.message.reply_text(f"Какой элемент добавим в '{current_list_name}':")
     return AWAITING_ITEM_FOR_ADD
 
 
@@ -396,7 +391,7 @@ async def add_item_receive_name(
 
     if not item_to_add:
         await update.message.reply_text(
-            f"Cannot add empty item. Try {Commands.ADD_ITEM} again"
+            f"Нельзя добавить пустое значение.\nПопробуй ещё раз {Commands.ADD_ITEM}"
         )
         return ConversationHandler.END
 
@@ -406,7 +401,7 @@ async def add_item_receive_name(
     write_list(user.id, current_list_name, current_items)
 
     await update.message.reply_text(
-        f"Added '{item_to_add}' to list '{current_list_name}'."
+        f"Элемент '{item_to_add}' дбавлен в список '{current_list_name}'"
     )
 
     await list_items_command(update, context)
@@ -425,7 +420,7 @@ async def list_items_command(
     items = read_list(user.id, current_list_name)
     if not items:
         await update.message.reply_text(
-            f"List '{current_list_name}' is empty! Use {Commands.ADD_ITEM}"
+            f"Список '{current_list_name}' пуст!\nДобавить элемент - {Commands.ADD_ITEM}"
         )
         return
     message_text_parts = [f"List '<b>{current_list_name}</b>':"]
@@ -447,11 +442,11 @@ async def remove_item_entry(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     current_items = read_list(user.id, current_list_name)
     if not current_items:
         await update.message.reply_text(
-            f"List '{current_list_name}' is empty. Nothing to remove"
+            f"Список '{current_list_name}' пуст. Удалять нечего."
         )
         return ConversationHandler.END
-    
-    await update.message.reply_text(f"Item number to remove")
+
+    await update.message.reply_text(f"Номер элемента для удаления:")
 
     return AWAITING_ITEM_FOR_REMOVE
 
@@ -462,12 +457,12 @@ async def remove_item_receive_choice(
     user = update.effective_user
     if not user or not update.message or not update.message.text:
         return ConversationHandler.END
-    
+
     current_list_name = context.user_data.get(CURRENT_LIST_KEY)
-    
+
     if not current_list_name:
         await update.message.reply_text(
-            f"Error: No list selected. Use {Commands.SET_ACTIVE_LIST}"
+            f"Error: Не выбран список. Выбрать - {Commands.SET_ACTIVE_LIST}"
         )
         return ConversationHandler.END
 
@@ -476,9 +471,9 @@ async def remove_item_receive_choice(
     current_items = read_list(user.id, current_list_name)
 
     if not current_items:
-        await update.message.reply_text(f"List '{current_list_name}' is empty.")
+        await update.message.reply_text(f"Список '{current_list_name}' пуст")
         return ConversationHandler.END
-    
+
     removed_item_names = []
 
     new_items = list(current_items)
@@ -488,10 +483,10 @@ async def remove_item_receive_choice(
             item_number = int(item)
             if 1 <= item_number <= len(new_items):
                 removed_item_names.append(new_items[item_number - 1])
-                new_items[item_number-1] = ""
+                new_items[item_number - 1] = ""
             else:
                 await update.message.reply_text(
-                    f"Invalid item number (1-{len(current_items)}). Try {Commands.REMOVE_ITEM} again."
+                    f"Неверный номер элемента (1-{len(current_items)}). Попробуй ещё раз - {Commands.REMOVE_ITEM}"
                 )
                 return ConversationHandler.END
 
@@ -502,35 +497,16 @@ async def remove_item_receive_choice(
         write_list(user.id, current_list_name, new_items)
 
         await update.message.reply_text(
-            f"Removed '{removed_item_names}' from '{current_list_name}'."
+            f"Удалён элемент '{removed_item_names}' из списка '{current_list_name}'"
         )
     else:
         await update.message.reply_text(
-            f"'{items_to_remove}' not found in '{current_list_name}'. Try again."
+            f"'{items_to_remove}' не найден в списке '{current_list_name}'"
         )
 
     await list_items_command(update, context)
 
     return ConversationHandler.END
-
-
-async def clear_list_command(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> None:
-    user = update.effective_user
-    if not user or not update.message:
-        return
-    current_list_name = await ensure_list_selected(update, context)
-    if not current_list_name:
-        return
-    items = read_list(user.id, current_list_name)
-    if not items:
-        await update.message.reply_text(f"List '{current_list_name}' is already empty.")
-        return
-    write_list(user.id, current_list_name, [])
-    await update.message.reply_text(
-        f"All items cleared from list '{current_list_name}'."
-    )
 
 
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
