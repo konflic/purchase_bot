@@ -547,10 +547,10 @@ def main() -> None:
         .build()
     )
 
-    cancel_handler = CommandHandler(Commands.CANCEL, cancel_conversation)
+    cancel_handler = CommandHandler(Commands.CANCEL[1:], cancel_conversation)
 
     createlist_conv = ConversationHandler(
-        entry_points=[CommandHandler(Commands.CREATE_LIST, createlist_entry)],
+        entry_points=[CommandHandler(Commands.CREATE_LIST[1:], createlist_entry)],
         states={
             AWAITING_LISTNAME_FOR_CREATE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, createlist_receive_name)
@@ -560,7 +560,7 @@ def main() -> None:
         conversation_timeout=DEFAULT_TIMEOUT,
     )
     selectlist_conv = ConversationHandler(
-        entry_points=[CommandHandler(Commands.SET_ACTIVE_LIST, selectlist_entry)],
+        entry_points=[CommandHandler(Commands.SET_ACTIVE_LIST[1:], selectlist_entry)],
         states={
             AWAITING_LISTNAME_FOR_SELECT: [
                 MessageHandler(
@@ -572,7 +572,7 @@ def main() -> None:
         conversation_timeout=DEFAULT_TIMEOUT,
     )
     deletelist_conv = ConversationHandler(
-        entry_points=[CommandHandler(Commands.DELETE_LIST, deletelist_entry)],
+        entry_points=[CommandHandler(Commands.DELETE_LIST[1:], deletelist_entry)],
         states={
             AWAITING_LISTNAME_FOR_DELETE: [
                 MessageHandler(
@@ -587,7 +587,7 @@ def main() -> None:
         conversation_timeout=DEFAULT_TIMEOUT,
     )
     add_item_conv = ConversationHandler(
-        entry_points=[CommandHandler(Commands.ADD_ITEM, add_item_entry)],
+        entry_points=[CommandHandler(Commands.ADD_ITEM[1:], add_item_entry)],
         states={
             AWAITING_ITEM_FOR_ADD: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, add_item_receive_name)
@@ -597,7 +597,7 @@ def main() -> None:
         conversation_timeout=DEFAULT_TIMEOUT,
     )
     remove_item_conv = ConversationHandler(
-        entry_points=[CommandHandler(Commands.REMOVE_ITEM, remove_item_entry)],
+        entry_points=[CommandHandler(Commands.REMOVE_ITEM[1:], remove_item_entry)],
         states={
             AWAITING_ITEM_FOR_REMOVE: [
                 MessageHandler(
@@ -610,9 +610,9 @@ def main() -> None:
     )
 
     application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CommandHandler(Commands.HELP, help_command))
-    application.add_handler(CommandHandler(Commands.SHOW_LISTS, lists_command))
-    application.add_handler(CommandHandler(Commands.SHOW_ITEMS, list_items_command))
+    application.add_handler(CommandHandler(Commands.HELP[1:], help_command))
+    application.add_handler(CommandHandler(Commands.SHOW_LISTS[1:], lists_command))
+    application.add_handler(CommandHandler(Commands.SHOW_ITEMS[1:], list_items_command))
 
     application.add_handler(createlist_conv)
     application.add_handler(selectlist_conv)
