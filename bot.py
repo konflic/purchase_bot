@@ -527,6 +527,7 @@ async def post_init_tasks(application: Application) -> None:
         BotCommand(Commands.ADD_ITEM, "Add an item to the current list"),
         BotCommand(Commands.SHOW_ITEMS, "Show items in the current list"),
         BotCommand(Commands.REMOVE_ITEM, "Remove item from current list"),
+        BotCommand(Commands.CANCEL, "Cancel operation"),        
     ]
     await application.bot.set_my_commands(bot_commands)
     print("Bot commands have been set")
