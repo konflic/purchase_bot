@@ -1,6 +1,8 @@
+import logging
 import os
 import re
 from pathlib import Path
+from venv import logger
 from telegram import Update, BotCommand
 from telegram.ext import (
     Application,  # Added for type hinting in post_init
@@ -30,6 +32,9 @@ DEFAULT_TIMEOUT = 30
     AWAITING_LISTNAME_FOR_DELETE,
     AWAITING_CONFIRM_DELETE,
 ) = range(6)
+
+
+logger = logging.getLogger("bot")
 
 
 class Commands:
@@ -501,6 +506,8 @@ async def remove_item_receive_choice(
 
     items_to_remove: list = [el for el in update.message.text.strip().split(" ") if el]
 
+    # logger.warning(f"items_to_remove => {items_to_remove}")
+
     current_items = read_list(user.id, current_list_name)
 
     if not current_items:
@@ -509,7 +516,10 @@ async def remove_item_receive_choice(
 
     new_items = list(current_items)
 
+    # logger.warning(f"new_items (1) => {new_items}")
+
     for item in items_to_remove:
+
         if item.isdigit():
             item_number = int(item)
 
@@ -527,7 +537,11 @@ async def remove_item_receive_choice(
         else:
             return ConversationHandler.END
 
+    # logger.warning(f"new_items (2) => {new_items}")
+
     new_items = [el for el in new_items if el]
+
+    write_list(user.id, current_list_name, new_items)
 
     await list_items_command(update, context)
 
