@@ -198,7 +198,10 @@ async def createlist_receive_name(
 
     context.user_data[CURRENT_LIST_KEY] = new_list_name
 
-    await update.message.reply_text(f"Ура! Создан и выбран список '{new_list_name}'")
+    await update.message.reply_text(
+        f"Ура! Создан и выбран список '{new_list_name}'"
+        + f"\n\n{Commands.ADD_ITEM}  {Commands.REMOVE_ITEM}  {Commands.HELP}"
+    )
 
     return ConversationHandler.END
 
@@ -429,19 +432,26 @@ async def list_items_command(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     user = update.effective_user
+
     if not user or not update.message:
         return
+
     current_list_name = await ensure_list_selected(update, context)
     if not current_list_name:
         return
+
     items = read_list(user.id, current_list_name)
     if not items:
         await update.message.reply_text(
             f"Список '{current_list_name}' пуст!\nДобавить элемент - {Commands.ADD_ITEM}"
         )
         return
+
     message_text_parts = [f"Список '<b>{current_list_name}</b>':"]
+
     for i, item in enumerate(items, 1):
+        if "~" in item:
+            item = f"<s>{item[1:-1]}</s>"
         message_text_parts.append(f"{i}. {item}")
 
     await update.message.reply_html(
@@ -452,17 +462,17 @@ async def list_items_command(
 
 async def remove_item_entry(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.effective_user
-    
+
     if not user or not update.message:
         return ConversationHandler.END
-    
+
     current_list_name = await ensure_list_selected(update, context)
-    
+
     if not current_list_name:
         return ConversationHandler.END
-    
+
     current_items = read_list(user.id, current_list_name)
-    
+
     if not current_items:
         await update.message.reply_text(
             f"Список '{current_list_name}' пуст. Удалять нечего."
@@ -498,15 +508,19 @@ async def remove_item_receive_choice(
         return ConversationHandler.END
 
     removed_item_names = []
-
     new_items = list(current_items)
 
     for item in items_to_remove:
         if item.isdigit():
             item_number = int(item)
             if 1 <= item_number <= len(new_items):
-                removed_item_names.append(new_items[item_number - 1])
-                new_items[item_number - 1] = f"~{new_items[item_number - 1]}~"
+
+                if "~" not in new_items[item_number - 1]:
+                    new_items[item_number - 1] = f"~{new_items[item_number - 1]}~"
+                else:
+                    new_items[item_number - 1] = ""
+                    removed_item_names.append(new_items[item_number - 1])
+
             else:
                 await update.message.reply_text(
                     f"Неверный номер элемента (1-{len(current_items)}). Попробуй ещё раз - {Commands.REMOVE_ITEM}"
