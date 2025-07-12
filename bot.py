@@ -507,39 +507,27 @@ async def remove_item_receive_choice(
         await update.message.reply_text(f"Список '{current_list_name}' пуст")
         return ConversationHandler.END
 
-    removed_item_names = []
     new_items = list(current_items)
 
     for item in items_to_remove:
         if item.isdigit():
             item_number = int(item)
+
             if 1 <= item_number <= len(new_items):
 
                 if "~" not in new_items[item_number - 1]:
                     new_items[item_number - 1] = f"~{new_items[item_number - 1]}~"
                 else:
                     new_items[item_number - 1] = ""
-                    removed_item_names.append(new_items[item_number - 1])
-
             else:
                 await update.message.reply_text(
                     f"Неверный номер элемента (1-{len(current_items)}). Попробуй ещё раз - {Commands.REMOVE_ITEM}"
                 )
                 return ConversationHandler.END
+        else:
+            return ConversationHandler.END
 
     new_items = [el for el in new_items if el]
-
-    if removed_item_names:
-
-        write_list(user.id, current_list_name, new_items)
-
-        await update.message.reply_text(
-            f"Удалён элемент '{removed_item_names}' из списка '{current_list_name}'"
-        )
-    else:
-        await update.message.reply_text(
-            f"'{items_to_remove}' не найден в списке '{current_list_name}'"
-        )
 
     await list_items_command(update, context)
 
