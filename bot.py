@@ -105,7 +105,7 @@ def get_standard_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
         [
             InlineKeyboardButton("📋 Показать списки", callback_data="show_lists"),
-            InlineKeyboardButton("📝 Показать элементы", callback_data="show_items")
+            InlineKeyboardButton("📝 Показать элементы", callback_data="show_items"),
         ]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -204,7 +204,7 @@ async def createlist_receive_name(update: Update, context: ContextTypes.DEFAULT_
     if get_user_list_path(user.id, new_list_name).exists():
         await update.message.reply_text(
             f"Список '{new_list_name}' уже есть.\n"
-            f"Выбрать {Commands.SET_ACTIVE_LIST} или  создать {Commands.CREATE_LIST} с другим названием"
+            f"Выбрать {Commands.SET_ACTIVE_LIST} или создать {Commands.CREATE_LIST} с другим названием"
         )
         return ConversationHandler.END
 
@@ -213,8 +213,8 @@ async def createlist_receive_name(update: Update, context: ContextTypes.DEFAULT_
     context.user_data[CURRENT_LIST_KEY] = new_list_name
 
     await update.message.reply_text(
-        f"Ура! Создан и выбран список '{new_list_name}'"
-        + f"\n\n{Commands.ADD_ITEM}  {Commands.REMOVE_ITEM}  {Commands.HELP}"
+        f"Создан и выбран список '{new_list_name}'"
+        + f"\n\n{Commands.ADD_ITEM}  {Commands.REMOVE_ITEM}  {Commands.SHOW_ITEMS}"
     )
 
     return ConversationHandler.END
@@ -239,7 +239,7 @@ async def lists_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         if CURRENT_LIST_KEY in context.user_data:
             del context.user_data[CURRENT_LIST_KEY]
     await update.message.reply_text(
-        "\n".join(message_parts) + f"\n\n{Commands.SET_ACTIVE_LIST}  {Commands.DELETE_LIST}  {Commands.HELP}"
+        "\n".join(message_parts) + f"\n\n{Commands.SET_ACTIVE_LIST}  {Commands.CREATE_LIST}  {Commands.DELETE_LIST}  "
     )
 
 
@@ -251,7 +251,7 @@ async def selectlist_entry(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     all_lists = get_all_list_names(user.id)
 
     if not all_lists:
-        await update.message.reply_text(f"Списков нет. Создать - {Commands.CREATE_LIST}")
+        await update.message.reply_text(f"Списков нет. Создать {Commands.CREATE_LIST}")
         return ConversationHandler.END
 
     current_list_name = context.user_data.get(CURRENT_LIST_KEY)
@@ -282,10 +282,7 @@ async def selectlist_entry(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text(
-        "Выберите список:",
-        reply_markup=reply_markup
-    )
+    await update.message.reply_text("Выберите список:", reply_markup=reply_markup)
 
     return ConversationHandler.END
 
@@ -338,7 +335,7 @@ async def selectlist_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     await query.message.reply_html(
         "\n".join(message_text_parts) + f"\n\n{Commands.ADD_ITEM}  {Commands.REMOVE_ITEM}",
-        reply_markup=get_standard_keyboard()
+        reply_markup=get_standard_keyboard(),
     )
 
 
@@ -501,17 +498,19 @@ async def list_items_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if all_crossed and current_list_name != "default":
         keyboard = [
             [InlineKeyboardButton("🗑️ Удалить список и вернуться к default", callback_data="delete_completed_list")],
-            [InlineKeyboardButton("📋 Показать списки", callback_data="show_lists"), InlineKeyboardButton("📝 Показать элементы", callback_data="show_items")]
+            [
+                InlineKeyboardButton("📋 Показать списки", callback_data="show_lists"),
+                InlineKeyboardButton("📝 Показать элементы", callback_data="show_items"),
+            ],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_html(
-            "\n".join(message_text_parts) + f"\n\n✅ Все элементы вычеркнуты!",
-            reply_markup=reply_markup
+            "\n".join(message_text_parts) + f"\n\n✅ Все элементы вычеркнуты!", reply_markup=reply_markup
         )
     else:
         await update.message.reply_html(
             "\n".join(message_text_parts) + f"\n\n{Commands.ADD_ITEM}  {Commands.REMOVE_ITEM}",
-            reply_markup=get_standard_keyboard()
+            reply_markup=get_standard_keyboard(),
         )
 
 
@@ -563,8 +562,7 @@ async def remove_item_entry(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
-        f"Выберите элемент для удаления из списка '{current_list_name}':",
-        reply_markup=reply_markup
+        f"Выберите элемент для удаления из списка '{current_list_name}':", reply_markup=reply_markup
     )
 
     return ConversationHandler.END
@@ -627,7 +625,9 @@ async def remove_item_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     # Show updated list
     items = read_list(user.id, current_list_name)
     if not items:
-        await query.message.reply_text(f"Список '{current_list_name}' теперь пуст!\nДобавить элемент - {Commands.ADD_ITEM}")
+        await query.message.reply_text(
+            f"Список '{current_list_name}' теперь пуст!\nДобавить элемент - {Commands.ADD_ITEM}"
+        )
         return
 
     message_text_parts = [f"Список '<b>{current_list_name}</b>':"]
@@ -644,17 +644,19 @@ async def remove_item_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     if all_crossed and current_list_name != "default":
         keyboard = [
             [InlineKeyboardButton("🗑️ Удалить список и вернуться к default", callback_data="delete_completed_list")],
-            [InlineKeyboardButton("📋 Показать списки", callback_data="show_lists"), InlineKeyboardButton("📝 Показать элементы", callback_data="show_items")]
+            [
+                InlineKeyboardButton("📋 Показать списки", callback_data="show_lists"),
+                InlineKeyboardButton("📝 Показать элементы", callback_data="show_items"),
+            ],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.message.reply_html(
-            "\n".join(message_text_parts) + f"\n\n✅ Все элементы вычеркнуты!",
-            reply_markup=reply_markup
+            "\n".join(message_text_parts) + f"\n\n✅ Все элементы вычеркнуты!", reply_markup=reply_markup
         )
     else:
         await query.message.reply_html(
             "\n".join(message_text_parts) + f"\n\n{Commands.ADD_ITEM}  {Commands.REMOVE_ITEM}",
-            reply_markup=get_standard_keyboard()
+            reply_markup=get_standard_keyboard(),
         )
 
 
@@ -682,7 +684,7 @@ async def standard_keyboard_callback(update: Update, context: ContextTypes.DEFAU
 
         await query.message.reply_text(
             "\n".join(message_parts) + f"\n\n{Commands.SET_ACTIVE_LIST}  {Commands.DELETE_LIST}  {Commands.HELP}",
-            reply_markup=get_standard_keyboard()
+            reply_markup=get_standard_keyboard(),
         )
 
     elif callback_data == "show_items":
@@ -692,16 +694,13 @@ async def standard_keyboard_callback(update: Update, context: ContextTypes.DEFAU
         if not current_list_name:
             await query.message.reply_text(
                 "Не выбран список!\nИспользуйте кнопку '📋 Показать списки' чтобы выбрать список",
-                reply_markup=get_standard_keyboard()
+                reply_markup=get_standard_keyboard(),
             )
             return
 
         items = read_list(user.id, current_list_name)
         if not items:
-            await query.message.reply_text(
-                f"Список '{current_list_name}' пуст!",
-                reply_markup=get_standard_keyboard()
-            )
+            await query.message.reply_text(f"Список '{current_list_name}' пуст!", reply_markup=get_standard_keyboard())
             return
 
         message_text_parts = [f"Список '<b>{current_list_name}</b>':"]
@@ -716,19 +715,20 @@ async def standard_keyboard_callback(update: Update, context: ContextTypes.DEFAU
         if all_crossed and current_list_name != "default":
             keyboard = [
                 [InlineKeyboardButton("🗑️ Удалить список и вернуться к default", callback_data="delete_completed_list")],
-                [InlineKeyboardButton("📋 Показать списки", callback_data="show_lists"), InlineKeyboardButton("📝 Показать элементы", callback_data="show_items")]
+                [
+                    InlineKeyboardButton("📋 Показать списки", callback_data="show_lists"),
+                    InlineKeyboardButton("📝 Показать элементы", callback_data="show_items"),
+                ],
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.message.reply_html(
-                "\n".join(message_text_parts) + f"\n\n✅ Все элементы вычеркнуты!",
-                reply_markup=reply_markup
+                "\n".join(message_text_parts) + f"\n\n✅ Все элементы вычеркнуты!", reply_markup=reply_markup
             )
         else:
             await query.message.reply_html(
                 "\n".join(message_text_parts) + f"\n\n{Commands.ADD_ITEM}  {Commands.REMOVE_ITEM}",
-                reply_markup=get_standard_keyboard()
+                reply_markup=get_standard_keyboard(),
             )
-
 
 
 async def delete_completed_list_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -771,7 +771,7 @@ async def delete_completed_list_callback(update: Update, context: ContextTypes.D
 
             await query.message.reply_html(
                 "\n".join(message_text_parts) + f"\n\n{Commands.ADD_ITEM}  {Commands.REMOVE_ITEM}",
-                reply_markup=get_standard_keyboard()
+                reply_markup=get_standard_keyboard(),
             )
         except OSError:
             await query.edit_message_text(f"Ошибка удаления списка '{current_list_name}'")
@@ -851,7 +851,9 @@ def main() -> None:
     remove_item_callback_handler = CallbackQueryHandler(remove_item_callback, pattern="^remove_")
 
     # Delete completed list callback handler
-    delete_completed_callback_handler = CallbackQueryHandler(delete_completed_list_callback, pattern="^delete_completed_list$")
+    delete_completed_callback_handler = CallbackQueryHandler(
+        delete_completed_list_callback, pattern="^delete_completed_list$"
+    )
 
     # Standard keyboard callback handler
     standard_keyboard_handler = CallbackQueryHandler(standard_keyboard_callback, pattern="^(show_lists|show_items)$")
